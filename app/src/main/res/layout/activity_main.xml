@@ -36,13 +36,6 @@
             android:layout_height="wrap_content"
             android:text="gen random UUID"
             android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnGenRandomUUIDUntilDuplicate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="gen random UUID until duplicate"
-            android:textAllCaps="false" />
     </LinearLayout>
 
 </LinearLayout>
