@@ -7,6 +7,14 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -17,6 +25,9 @@ class MainActivity : AppCompatActivity() {
     private val tvSSAID: TextView by lazy { findViewById(R.id.tvSSAID) }
     private val btnGenSSAID: Button by lazy { findViewById(R.id.btnGenSSAID) }
 
+    private val tvAAID: TextView by lazy { findViewById(R.id.tvAAID) }
+    private val btnGenAAID: Button by lazy { findViewById(R.id.btnGenAAID) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -26,7 +37,82 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         initUUID()
         initSSAID()
+        initAAID()
     }
+
+    private fun initAAID() {
+        btnGenAAID.setOnClickListener { showAAID() }
+        showAAID()
+    }
+
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    private fun showAAID() {
+        val aaidFlow = getAAID()
+        lifecycleScope.launch {
+            aaidFlow.collect(collector = {
+                Log.d("RDTest", "aaidFlow.collect, it=$it")
+                tvAAID.text = it
+            })
+        }
+    }
+
+
+    private fun getAAID(): Flow<String> { //gms ver
+        var aaid: String
+        val aaidStateFlow: MutableStateFlow<String> = MutableStateFlow("")
+        scope.launch {
+            try {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                val advertisingIdInfo = AdvertisingIdClient.getAdvertisingIdInfo(applicationContext)
+                aaid = advertisingIdInfo.id ?: ""
+                aaidStateFlow.value = aaid
+            } catch (e: Exception) {
+                Log.d("RDTest", "getAAID fail, e=$e")
+            }
+        }
+
+        return aaidStateFlow
+    }
+
+//    private fun getAAID(): Flow<String> { //androidX ver
+//        Log.d("RDTest", "getAAID")
+//        var aaid = ""
+//        if (AdvertisingIdClient.isAdvertisingIdProviderAvailable(this)) {
+//            val advertisingIdInfoListenableFuture =
+//                AdvertisingIdClient.getAdvertisingIdInfo(applicationContext)
+//
+//            addCallback(
+//                advertisingIdInfoListenableFuture, object : FutureCallback<AdvertisingIdInfo> {
+//                    override fun onSuccess(adInfo: AdvertisingIdInfo?) {
+//                        Log.d("RDTest", "onSuccess")
+//                        adInfo?.let {
+//                            val id: String = adInfo.id
+//                            val providerPackageName: String = adInfo.providerPackageName
+//                            val isLimitAdTrackingEnabled: Boolean = adInfo.isLimitAdTrackingEnabled
+//                            Log.d("RDTest", "AAID= $id")
+//                            aaid = id
+//                        }
+//                    }
+//
+//                    override fun onFailure(t: Throwable) {
+//                        Log.e(
+//                            "RDTest",
+//                            "Failed to connect to Advertising ID provider."
+//                        )
+//                        // Try to connect to the Advertising ID provider again, or fall
+//                        // back to an ads solution that doesn't require using the
+//                        // Advertising ID library.
+//                    }
+//                }, Executors.newSingleThreadExecutor()
+//            )
+//        } else {
+//            // The Advertising ID client library is unavailable. Use a different
+//            // library to perform any required ads use cases.
+//            Log.d("RDTest", "!AdvertisingIdClient.isAdvertisingIdProviderAvailable")
+//        }
+//        return flowOf(aaid)
+//    }
 
     private fun initSSAID() {
         btnGenSSAID.setOnClickListener { showSSAID() }
