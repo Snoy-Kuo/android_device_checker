@@ -11,17 +11,21 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <TextView
+
+        <Button
+            android:id="@+id/btnGenRandomUUID"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="randomUUID" />
+            android:text="UUID"
+            android:textAllCaps="false" />
 
         <TextView
             android:id="@+id/tvRandomUUID"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="3"
+            android:gravity="end"
             tools:text="123456" />
     </LinearLayout>
 
@@ -31,11 +35,20 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btnGenRandomUUID"
-            android:layout_width="wrap_content"
+            android:id="@+id/btnGenSSAID"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="gen random UUID"
+            android:layout_weight="1"
+            android:text="SSAID"
             android:textAllCaps="false" />
+
+        <TextView
+            android:id="@+id/tvSSAID"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:gravity="end"
+            tools:text="123456" />
     </LinearLayout>
 
 </LinearLayout>
