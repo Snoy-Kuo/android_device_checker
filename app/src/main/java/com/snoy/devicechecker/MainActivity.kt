@@ -23,6 +23,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.*
 
@@ -32,16 +33,19 @@ class MainActivity : AppCompatActivity() {
     private val btnGenRandomUUID: Button by lazy { findViewById(R.id.btnGenRandomUUID) }
 
     private val tvSSAID: TextView by lazy { findViewById(R.id.tvSSAID) }
-    private val btnGenSSAID: Button by lazy { findViewById(R.id.btnGenSSAID) }
+    private val btnGetSSAID: Button by lazy { findViewById(R.id.btnGetSSAID) }
 
     private val tvAAID: TextView by lazy { findViewById(R.id.tvAAID) }
-    private val btnGenAAID: Button by lazy { findViewById(R.id.btnGenAAID) }
+    private val btnGetAAID: Button by lazy { findViewById(R.id.btnGetAAID) }
 
     private val tvIMEI: TextView by lazy { findViewById(R.id.tvIMEI) }
-    private val btnGenIMEI: Button by lazy { findViewById(R.id.btnGenIMEI) }
+    private val btnGetIMEI: Button by lazy { findViewById(R.id.btnGetIMEI) }
 
     private val tvMAC: TextView by lazy { findViewById(R.id.tvMAC) }
-    private val btnGenMAC: Button by lazy { findViewById(R.id.btnGenMAC) }
+    private val btnGetMAC: Button by lazy { findViewById(R.id.btnGetMAC) }
+
+    private val tvIP: TextView by lazy { findViewById(R.id.tvIP) }
+    private val btnGetIP: Button by lazy { findViewById(R.id.btnGetIP) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,10 +57,62 @@ class MainActivity : AppCompatActivity() {
         initAAID()
         initIMEI()
         initMAC()
+        initIP()
+    }
+
+    private fun initIP() {
+        btnGetIP.setOnClickListener { showIP() }
+        showIP()
+    }
+
+    private fun showIP() {
+        val ip = getIP()
+        tvIP.text = ip
+    }
+
+    private fun getIP(): String {
+        try {
+            val all = NetworkInterface.getNetworkInterfaces() ?: return ""
+            val allList = Collections.list(all)
+            Log.d("RDTest", "nif count= ${allList.size}")
+            var ipStr = ""
+            var lastNotEmpty = ""
+            var lastNotEmptyNif = ""
+            for (nif in allList) {
+                if (NetworkInterface.getByName(nif.name) == null) {
+                    continue
+                }
+                val addrs: List<InetAddress> = Collections.list(nif.inetAddresses)
+                var tmpIPStr = ""
+                for (addr in addrs) {
+                    if (!addr.isLoopbackAddress) {
+                        tmpIPStr = addr.hostAddress ?: ""
+                        if (tmpIPStr.isNotEmpty()) {
+                            lastNotEmpty = tmpIPStr
+                            lastNotEmptyNif = nif.name
+                        }
+                    }
+                }
+                Log.d("RDTest", "[${nif.name}] => $tmpIPStr")
+                if (nif.name.contains("eth0", ignoreCase = true)) {
+                    ipStr = "[${nif.name}] => $tmpIPStr"
+                } else if (nif.name.contains("wlan0", ignoreCase = true)) {
+                    ipStr = "[${nif.name}] => $tmpIPStr"
+                }
+            }
+            if (ipStr.isEmpty()) {
+                ipStr = "[$lastNotEmptyNif] => $lastNotEmpty"
+            }
+            Log.d("RDTest", "IP = $ipStr")
+            return ipStr
+        } catch (e: Exception) {
+            Log.e("RDTest", "e= $e")
+            return ""
+        }
     }
 
     private fun initMAC() {
-        btnGenMAC.setOnClickListener { showMAC() }
+        btnGetMAC.setOnClickListener { showMAC() }
         showMAC()
     }
 
@@ -66,11 +122,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getMAC(): String {
-        if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= 30) {
             return ""
         } else {
             try {
-                val all = NetworkInterface.getNetworkInterfaces() ?: return "" //29
+                val all = NetworkInterface.getNetworkInterfaces() ?: return ""
                 val allList = Collections.list(all)
                 Log.d("RDTest", "nif count= ${allList.size}")
                 var macStr = ""
@@ -106,7 +162,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initIMEI() {
-        btnGenIMEI.setOnClickListener { showIMEI() }
+        btnGetIMEI.setOnClickListener { showIMEI() }
         showIMEI()
     }
 
@@ -170,7 +226,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initAAID() {
-        btnGenAAID.setOnClickListener { showAAID() }
+        btnGetAAID.setOnClickListener { showAAID() }
         showAAID()
     }
 
@@ -203,7 +259,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initSSAID() {
-        btnGenSSAID.setOnClickListener { showSSAID() }
+        btnGetSSAID.setOnClickListener { showSSAID() }
         showSSAID()
     }
 
