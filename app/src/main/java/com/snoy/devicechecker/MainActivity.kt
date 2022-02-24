@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.creative.ipfyandroid.Ipfy
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,11 @@ class MainActivity : AppCompatActivity() {
     private val tvIP: TextView by lazy { findViewById(R.id.tvIP) }
     private val btnGetIP: Button by lazy { findViewById(R.id.btnGetIP) }
 
+    private val tvExIP: TextView by lazy { findViewById(R.id.tvExIP) }
+    private val btnGetExIP: Button by lazy { findViewById(R.id.btnGetExIP) }
+
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -58,6 +64,36 @@ class MainActivity : AppCompatActivity() {
         initIMEI()
         initMAC()
         initIP()
+        initExIP()
+    }
+
+    private fun initExIP() {
+        btnGetExIP.setOnClickListener { showExIP() }
+        showExIP()
+    }
+
+    private fun showExIP() {
+        val exipFlow = getExIP()
+        lifecycleScope.launch {
+            exipFlow.collect(collector = {
+                Log.d("RDTest", "ExIP = $it")
+                tvExIP.text = it
+            })
+        }
+    }
+
+    private fun getExIP(): Flow<String> {
+        var exip = ""
+        val exipStateFlow: MutableStateFlow<String> = MutableStateFlow("")
+
+        Ipfy.getInstance().getPublicIpObserver().observe(this) { ipData ->
+            exip = ipData.currentIpAddress
+                ?: "" // this is a value which is your current public IP address, null if no/lost internet connection
+            exipStateFlow.value = exip
+            //            ipData.lastStoredIpAddress // this is a previous IP address while network lost/reconnected and current IP address assigned to null/new one
+        }
+
+        return exipStateFlow
     }
 
     private fun initIP() {
@@ -240,7 +276,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
     private fun getAAID(): Flow<String> { //gms ver
         var aaid: String
         val aaidStateFlow: MutableStateFlow<String> = MutableStateFlow("")

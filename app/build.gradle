@@ -45,10 +45,13 @@ dependencies {
     //AAID
     // Used for the calls to addCallback() in the snippets on this page.
     implementation 'com.google.android.gms:play-services-ads-identifier:18.0.1'
-//    implementation 'com.google.guava:guava:28.0-android'
     //coroutine for get AAID
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0'
     // Lifecycles only (without ViewModel or LiveData)
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.4.1"
+    //
+
+    //external IP
+    implementation 'com.github.chintan369:Ipify-Android:1.0.1'
     //
 }
