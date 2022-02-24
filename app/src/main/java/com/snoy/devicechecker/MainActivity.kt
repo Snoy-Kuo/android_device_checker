@@ -23,6 +23,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.net.NetworkInterface
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -39,17 +40,69 @@ class MainActivity : AppCompatActivity() {
     private val tvIMEI: TextView by lazy { findViewById(R.id.tvIMEI) }
     private val btnGenIMEI: Button by lazy { findViewById(R.id.btnGenIMEI) }
 
+    private val tvMAC: TextView by lazy { findViewById(R.id.tvMAC) }
+    private val btnGenMAC: Button by lazy { findViewById(R.id.btnGenMAC) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-    }
 
-    override fun onResume() {
-        super.onResume()
+        Log.d("RDTest", "SDK_INT= ${Build.VERSION.SDK_INT}")
         initUUID()
         initSSAID()
         initAAID()
         initIMEI()
+        initMAC()
+    }
+
+    private fun initMAC() {
+        btnGenMAC.setOnClickListener { showMAC() }
+        showMAC()
+    }
+
+    private fun showMAC() {
+        val mac = getMAC()
+        tvMAC.text = mac
+    }
+
+    private fun getMAC(): String {
+        if (Build.VERSION.SDK_INT >= 29) {
+            return ""
+        } else {
+            try {
+                val all = NetworkInterface.getNetworkInterfaces() ?: return "" //29
+                val allList = Collections.list(all)
+                Log.d("RDTest", "nif count= ${allList.size}")
+                var macStr = ""
+                var lastNotEmpty = ""
+                var lastNotEmptyNif = ""
+                for (nif in allList) {
+                    if (NetworkInterface.getByName(nif.name) == null) {
+                        continue
+                    }
+                    val macBytes: ByteArray? = nif.hardwareAddress
+                    val tmpMacStr = macBytes?.toHex(":") ?: "" //30
+                    if (tmpMacStr.isNotEmpty()) {
+                        lastNotEmpty = tmpMacStr
+                        lastNotEmptyNif = nif.name
+                    }
+                    Log.d("RDTest", "[${nif.name}] => $tmpMacStr")
+                    if (nif.name.contains("eth0", ignoreCase = true)) {
+                        macStr = "[${nif.name}] => $tmpMacStr"
+                    } else if (nif.name.contains("wlan0", ignoreCase = true)) {
+                        macStr = "[${nif.name}] => $tmpMacStr"
+                    }
+                }
+                if (macStr.isEmpty()) {
+                    macStr = "[$lastNotEmptyNif] => $lastNotEmpty"
+                }
+                Log.d("RDTest", "MAC = $macStr")
+                return macStr
+            } catch (e: Exception) {
+                Log.e("RDTest", "e= $e")
+                return ""
+            }
+        }
     }
 
     private fun initIMEI() {
@@ -58,18 +111,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showIMEI() {
-        val permissionState =
-            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
-        if (permissionState != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.READ_PHONE_STATE),
-                REQUEST_READ_PHONE_STATE
-            )
-        } else {
-            val imei = getIMEI()
-            tvIMEI.text = imei
-        }
+        val imei = getIMEI()
+        tvIMEI.text = imei
     }
 
     override fun onRequestPermissionsResult(
@@ -91,21 +134,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission", "HardwareIds")
     private fun getIMEI(): String {
-        val imei: String
-        val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-        imei = try {
-            Log.d("RDTest", "SDK_INT= ${Build.VERSION.SDK_INT}")
-            if (Build.VERSION.SDK_INT >= 26) {
-                telephonyManager.imei
+        if (Build.VERSION.SDK_INT >= 29) {
+            return ""
+        } else {
+            val permissionState =
+                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+            if (permissionState != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.READ_PHONE_STATE),
+                    REQUEST_READ_PHONE_STATE
+                )
+                return ""
             } else {
-                telephonyManager.deviceId
+                val imei: String
+                val telephonyManager =
+                    getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+                imei = try {
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        telephonyManager.imei
+                    } else {
+                        @Suppress("DEPRECATION")
+                        telephonyManager.deviceId
+                    }
+                } catch (e: SecurityException) { //API 29 (Android10)+
+                    Log.e("RDTest", "e= $e")
+                    ""
+                }
+                Log.d("RDTest", "IMEI = $imei")
+                return imei
             }
-        } catch (e: SecurityException) { //API 29 (Android10)+
-            Log.e("RDTest", "e= $e")
-            ""
         }
-        return imei
     }
 
     private fun initAAID() {
@@ -117,7 +178,7 @@ class MainActivity : AppCompatActivity() {
         val aaidFlow = getAAID()
         lifecycleScope.launch {
             aaidFlow.collect(collector = {
-                Log.d("RDTest", "aaidFlow.collect, it=$it")
+                Log.d("RDTest", "AAID = $it")
                 tvAAID.text = it
             })
         }

@@ -3,8 +3,10 @@
     package="com.snoy.devicechecker">
 
     <!--for IMEI-->
-    <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!--for MAC-->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <!---->
 
     <application
