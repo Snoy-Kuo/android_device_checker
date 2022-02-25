@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getExIP(): Flow<String> {
-        var exip = ""
+        var exip: String
         val exipStateFlow: MutableStateFlow<String> = MutableStateFlow("")
 
         Ipfy.getInstance().getPublicIpObserver().observe(this) { ipData ->
