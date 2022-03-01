@@ -9,6 +9,7 @@ An Android example App that shows some device and resettable ids includes:
  - IP address
  - Public IP Address
  - Firebase installation ID (FID)
+ - DRM API device unique ID
 
 ## Dev env
 
@@ -22,6 +23,7 @@ An Android example App that shows some device and resettable ids includes:
  ## References
 
  - [Best practices for unique identifiers](https://developer.android.com/training/articles/user-data-ids)
+ - [Using MediaDrm for device ID tracking](https://beltran.work/blog/2018-03-27-device-unique-id-android/)
 
  ## Libraries
 
@@ -33,4 +35,4 @@ An Android example App that shows some device and resettable ids includes:
 
  ## Todos
 
- - add DRM API info
+ - add SafetyNet API info

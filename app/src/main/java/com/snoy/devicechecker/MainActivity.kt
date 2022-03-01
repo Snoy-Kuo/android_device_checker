@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.MediaDrm
+import android.media.UnsupportedSchemeException
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -55,6 +57,9 @@ class MainActivity : AppCompatActivity() {
     private val tvFID: TextView by lazy { findViewById(R.id.tvFID) }
     private val btnGetFID: Button by lazy { findViewById(R.id.btnGetFID) }
 
+    private val tvDRM: TextView by lazy { findViewById(R.id.tvDRM) }
+    private val btnGetDRM: Button by lazy { findViewById(R.id.btnGetDRM) }
+
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,6 +75,29 @@ class MainActivity : AppCompatActivity() {
         initIP()
         initExIP()
         initFID()
+        initDRM()
+    }
+
+    private fun initDRM() {
+        btnGetDRM.setOnClickListener { showDRM() }
+        showDRM()
+    }
+
+    private fun showDRM() {
+        val drm = getDRM(DrmProviderUuid.WIDEVINE_UUID)
+        tvDRM.text = drm
+    }
+
+    private fun getDRM(providerUUID: UUID): String {
+        val byDrmId:ByteArray = try {
+            MediaDrm(providerUUID).getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
+        } catch (e: UnsupportedSchemeException){
+            Log.d("RDTest", "getDRM exception e= $e")
+            byteArrayOf()
+        }
+            val strDrmId = byDrmId.toHex()
+        Log.d("RDTest", "DRM = $strDrmId, byte len=${byDrmId.size}")
+        return strDrmId
     }
 
     private fun initFID() {
@@ -93,7 +121,6 @@ class MainActivity : AppCompatActivity() {
 
         FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                Log.d("RDTest", "Installation ID: " + task.result)
                 fid = task.result?.toString() ?: ""
                 fidStateFlow.value = fid
             } else {
