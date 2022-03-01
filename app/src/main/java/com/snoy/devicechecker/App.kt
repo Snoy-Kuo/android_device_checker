@@ -3,6 +3,7 @@ package com.snoy.devicechecker
 import android.app.Application
 import com.creative.ipfyandroid.Ipfy
 import com.creative.ipfyandroid.IpfyClass
+import com.google.firebase.FirebaseApp
 
 @Suppress("unused")
 class App : Application() {
@@ -14,5 +15,7 @@ class App : Application() {
         Ipfy.init(this, IpfyClass.IPv4) //to get only IPv4 address
         //and
 //        Ipfy.init(this,IpfyClass.UniversalIP) //to get Universal address in IPv4/v6
+
+        FirebaseApp.initializeApp(this)
     }
 }

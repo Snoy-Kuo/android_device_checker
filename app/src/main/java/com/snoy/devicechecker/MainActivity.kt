@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.creative.ipfyandroid.Ipfy
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import com.google.firebase.installations.FirebaseInstallations
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -51,6 +52,9 @@ class MainActivity : AppCompatActivity() {
     private val tvExIP: TextView by lazy { findViewById(R.id.tvExIP) }
     private val btnGetExIP: Button by lazy { findViewById(R.id.btnGetExIP) }
 
+    private val tvFID: TextView by lazy { findViewById(R.id.tvFID) }
+    private val btnGetFID: Button by lazy { findViewById(R.id.btnGetFID) }
+
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +69,39 @@ class MainActivity : AppCompatActivity() {
         initMAC()
         initIP()
         initExIP()
+        initFID()
+    }
+
+    private fun initFID() {
+        btnGetFID.setOnClickListener { showFID() }
+        showFID()
+    }
+
+    private fun showFID() {
+        val fidFlow = getFID()
+        lifecycleScope.launch {
+            fidFlow.collect(collector = {
+                Log.d("RDTest", "FID = $it")
+                tvFID.text = it
+            })
+        }
+    }
+
+    private fun getFID(): Flow<String> {
+        var fid: String
+        val fidStateFlow: MutableStateFlow<String> = MutableStateFlow("")
+
+        FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("RDTest", "Installation ID: " + task.result)
+                fid = task.result?.toString() ?: ""
+                fidStateFlow.value = fid
+            } else {
+                Log.e("RDTest", "Unable to get Installation ID")
+            }
+        }
+
+        return fidStateFlow
     }
 
     private fun initExIP() {
@@ -275,7 +312,6 @@ class MainActivity : AppCompatActivity() {
             })
         }
     }
-
 
     private fun getAAID(): Flow<String> { //gms ver
         var aaid: String

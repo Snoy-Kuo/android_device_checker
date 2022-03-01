@@ -8,6 +8,7 @@ An Android example App that shows some device and resettable ids includes:
  - MAC address
  - IP address
  - Public IP Address
+ - Firebase installation ID (FID)
 
 ## Dev env
 
@@ -28,8 +29,8 @@ An Android example App that shows some device and resettable ids includes:
  - [kotlinx-coroutines-android](https://developer.android.com/kotlin/coroutines)
  - [lifecycle-runtime-ktx](https://developer.android.com/jetpack/androidx/releases/lifecycle)
  - [Ipify-Android](https://github.com/chintan369/Ipify-Android)
+ - [firebase-installations](https://firebase.google.com/docs/projects/manage-installations#kotlin+ktx_1)
 
  ## Todos
 
- - add FID(Firebase installation ID) info
- - add DRM info
+ - add DRM API info
