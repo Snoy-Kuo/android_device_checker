@@ -10,6 +10,7 @@ An Android example App that shows some device and resettable ids includes:
  - Public IP Address
  - Firebase installation ID (FID)
  - DRM API device unique ID
+ - SafetyNet API response nonce
 
 ## Dev env
 
@@ -24,6 +25,8 @@ An Android example App that shows some device and resettable ids includes:
 
  - [Best practices for unique identifiers](https://developer.android.com/training/articles/user-data-ids)
  - [Using MediaDrm for device ID tracking](https://beltran.work/blog/2018-03-27-device-unique-id-android/)
+ - [SafetyNetApi](https://github.com/Rendellhb/SafetyNetApi)
+ - [Stay Safe With SafetyNet Attestation API in Android](https://www.netguru.com/blog/stay-safe-with-safetynet-attestation-api-in-android)
 
  ## Libraries
 
@@ -32,7 +35,9 @@ An Android example App that shows some device and resettable ids includes:
  - [lifecycle-runtime-ktx](https://developer.android.com/jetpack/androidx/releases/lifecycle)
  - [Ipify-Android](https://github.com/chintan369/Ipify-Android)
  - [firebase-installations](https://firebase.google.com/docs/projects/manage-installations#kotlin+ktx_1)
+ - [play-services-safetynet](https://developer.android.com/training/safetynet)
+ - [GSON](https://github.com/google/gson)
 
  ## Todos
 
- - add SafetyNet API info
+ - move logic code to VM layer.

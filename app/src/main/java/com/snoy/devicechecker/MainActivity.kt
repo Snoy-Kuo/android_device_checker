@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.telephony.TelephonyManager
+import android.util.Base64
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
@@ -20,7 +21,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.creative.ipfyandroid.Ipfy
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.safetynet.SafetyNet
 import com.google.firebase.installations.FirebaseInstallations
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -60,6 +66,9 @@ class MainActivity : AppCompatActivity() {
     private val tvDRM: TextView by lazy { findViewById(R.id.tvDRM) }
     private val btnGetDRM: Button by lazy { findViewById(R.id.btnGetDRM) }
 
+    private val tvSafetyNet: TextView by lazy { findViewById(R.id.tvSafetyNet) }
+    private val btnGetSafetyNet: Button by lazy { findViewById(R.id.btnGetSafetyNet) }
+
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,6 +85,100 @@ class MainActivity : AppCompatActivity() {
         initExIP()
         initFID()
         initDRM()
+        initSafetyNet()
+    }
+
+    private fun initSafetyNet() {
+        btnGetSafetyNet.setOnClickListener { showSafetyNet() }
+        showSafetyNet()
+    }
+
+    private fun showSafetyNet() {
+        val safetyNetFlow = getSafetyNet()
+        lifecycleScope.launch {
+            safetyNetFlow.collect(collector = {
+                Log.d("RDTest", "SafetyNet = $it")
+                tvSafetyNet.text = it
+            })
+        }
+    }
+
+    private fun getSafetyNet(): Flow<String> {
+
+        var safetyNet: String
+        val safetyNetFlow: MutableStateFlow<String> = MutableStateFlow("")
+
+        if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this)
+            == ConnectionResult.SUCCESS
+        ) {
+            // The SafetyNet Attestation API is available.
+            Log.d("RDTest", "The SafetyNet Attestation API is available")
+            val apiKey = BuildConfig.API_KEY
+            val reqNonceUUID = UUID.randomUUID() //TODO: reqNonce should fetch from App server.
+            Log.d("RDTest", "reqNonceUUID= $reqNonceUUID")
+            Log.d("RDTest", "reqNonceUUID encode= ${reqNonceUUID.toByteArray().base64Encode()}")
+            SafetyNet.getClient(this).attest(reqNonceUUID.toByteArray(), apiKey)
+                .addOnSuccessListener(this) {
+                    // Indicates communication with the service was successful.
+                    // Use response.getJwsResult() to get the result data.
+                    Log.d("RDTest", "attest success.")
+                    safetyNet = try {
+                        val model = Gson().fromJson(
+                            extractJwsData(it.jwsResult)?.let { it1 -> String(it1) },
+                            SafetyNetApiModel::class.java
+                        )
+                        Log.d("RDTest", "model.nonce= ${model.nonce}")
+                        model.nonce?.let {
+                            val byteArrayNonce = model.nonce!!.base64Decode()
+                            val uuidNonce = byteArrayNonce.toUuid()
+                            Log.d("RDTest", "model.nonce decode= $uuidNonce")
+                        }
+                        model.nonce ?: ""
+                    } catch (e: Exception) {
+                        Log.d("RDTest", "e= $e")
+                        ""
+                    }
+                    //TODO: response jwsResult should send to App server for validation.
+
+                    safetyNetFlow.value = safetyNet
+                }
+                .addOnFailureListener(this) { e ->
+                    // An error occurred while communicating with the service.
+                    if (e is ApiException) {
+                        // An error with the Google Play services API contains some
+                        // additional details.
+                        Log.d("RDTest", "apiException: $e")
+                        // You can retrieve the status code using the
+                        // apiException.statusCode property.
+                    } else {
+                        // A different, unknown type of error occurred.
+                        Log.d("RDTest", "Error: " + e.message)
+                    }
+                    safetyNet = ""
+                    safetyNetFlow.value = safetyNet
+                }
+
+        } else {
+            // Prompt user to update Google Play services.
+            Log.d("RDTest", "The SafetyNet Attestation API is NOT available")
+            safetyNet = ""
+            safetyNetFlow.value = safetyNet
+        }
+
+        return safetyNetFlow
+    }
+
+    private fun extractJwsData(jws: String?): ByteArray? {
+        val parts = jws?.split("[.]".toRegex())?.dropLastWhile { it.isEmpty() }?.toTypedArray()
+        if (parts?.size != 3) {
+            Log.d(
+                "RDTest",
+                "Failure: Illegal JWS signature format. The JWS consists of "
+                        + parts?.size + " parts instead of 3."
+            )
+            return null
+        }
+        return Base64.decode(parts[1], Base64.DEFAULT)
     }
 
     private fun initDRM() {
@@ -89,13 +192,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getDRM(providerUUID: UUID): String {
-        val byDrmId:ByteArray = try {
+        val byDrmId: ByteArray = try {
             MediaDrm(providerUUID).getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
-        } catch (e: UnsupportedSchemeException){
+        } catch (e: UnsupportedSchemeException) {
             Log.d("RDTest", "getDRM exception e= $e")
             byteArrayOf()
         }
-            val strDrmId = byDrmId.toHex()
+        val strDrmId = byDrmId.toHex()
         Log.d("RDTest", "DRM = $strDrmId, byte len=${byDrmId.size}")
         return strDrmId
     }

@@ -4,6 +4,22 @@ plugins {
     id 'com.google.gms.google-services'  // Google Services plugin
 }
 
+//ref= https://stackoverflow.com/questions/25854849/use-a-local-properties-field-when-declaring-a-buildconfigfield
+def getLocalProps(String propName) {
+    def propsFile = rootProject.file('local.properties')
+    String value = ""
+    if (propsFile.exists()) {
+        def props = new Properties()
+        try {
+            props.load(new FileInputStream(propsFile))
+            value = props[propName]
+        } catch (Exception ignored) {
+        }
+
+    }
+    return value
+}
+
 android {
     compileSdk 31
 
@@ -13,6 +29,9 @@ android {
         targetSdk 31
         versionCode 1
         versionName "1.0"
+
+        //add gcp_api_key="YOUR_GCP_API_KEY" in local.properties
+        buildConfigField "String", "API_KEY", getLocalProps("gcp_api_key")
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,4 +78,8 @@ dependencies {
     //Create a Firebase project. Then add google-services.json in app module.
     implementation platform('com.google.firebase:firebase-bom:29.1.0')
     implementation 'com.google.firebase:firebase-installations:17.0.0'
+
+    //SafetyNET
+    implementation 'com.google.android.gms:play-services-safetynet:18.0.1'
+    implementation 'com.google.code.gson:gson:2.9.0'
 }

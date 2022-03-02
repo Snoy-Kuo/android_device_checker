@@ -2,6 +2,7 @@ package com.snoy.devicechecker
 
 import java.util.*
 
+@Suppress("unused")
 object DrmProviderUuid {
     val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
     val COMMON_PSSH_UUID = UUID(0x1077EFECC0B24D02L, -0x531cc3e1ad1d04b5L)
